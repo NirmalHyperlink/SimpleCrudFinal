@@ -24,4 +24,22 @@ public partial class User
     public DateTime CreatedDate { get; set; }
 
     public bool IsDeleted { get; set; }
+
+    public int? CountryId { get; set; }
+
+    public int? StateId { get; set; }
+
+    public int? CityId { get; set; }
+
+    [ForeignKey("CityId")]
+    [InverseProperty("Users")]
+    public virtual City? City { get; set; }
+
+    [ForeignKey("CountryId")]
+    [InverseProperty("Users")]
+    public virtual Country? Country { get; set; }
+
+    [ForeignKey("StateId")]
+    [InverseProperty("Users")]
+    public virtual State? State { get; set; }
 }

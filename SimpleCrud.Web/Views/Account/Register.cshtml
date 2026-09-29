@@ -2,10 +2,11 @@
 
 @{
     ViewData["Title"] = "Register";
+    var countries = ViewBag.Countries as List<SimpleCrud.Models.DTOs.LookupDto> ?? new List<SimpleCrud.Models.DTOs.LookupDto>();
 }
 
 <div class="row justify-content-center mt-4">
-    <div class="col-md-6 col-lg-5">
+    <div class="col-md-7 col-lg-6">
         <div class="card shadow-sm border-0">
             <div class="card-header bg-primary text-white py-3">
                 <h4 class="card-title mb-0 text-center fw-bold">
@@ -13,7 +14,7 @@
                 </h4>
             </div>
             <div class="card-body p-4">
-                <form asp-action="Register" method="post">
+                <form asp-action="Register" method="post" id="registerForm">
                     <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
 
                     <div class="mb-3">
@@ -34,22 +35,66 @@
                         <span asp-validation-for="Email" class="text-danger small"></span>
                     </div>
 
-                    <div class="mb-3">
-                        <label asp-for="Password" class="form-label fw-semibold">Password</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="bi bi-lock"></i></span>
-                            <input asp-for="Password" class="form-control" type="password" placeholder="Create a password" />
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Password" class="form-label fw-semibold">Password</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                                <input asp-for="Password" class="form-control" type="password" placeholder="Password" />
+                            </div>
+                            <span asp-validation-for="Password" class="text-danger small"></span>
                         </div>
-                        <span asp-validation-for="Password" class="text-danger small"></span>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="ConfirmPassword" class="form-label fw-semibold">Confirm Password</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+                                <input asp-for="ConfirmPassword" class="form-control" type="password" placeholder="Confirm" />
+                            </div>
+                            <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                        </div>
                     </div>
 
-                    <div class="mb-4">
-                        <label asp-for="ConfirmPassword" class="form-label fw-semibold">Confirm Password</label>
+                    <hr class="my-3 text-muted" />
+                    <h6 class="fw-bold text-secondary mb-3"><i class="bi bi-geo-alt me-1"></i>Location Information</h6>
+
+                    <!-- Country Dropdown -->
+                    <div class="mb-3">
+                        <label asp-for="CountryId" class="form-label fw-semibold">Country</label>
                         <div class="input-group">
-                            <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
-                            <input asp-for="ConfirmPassword" class="form-control" type="password" placeholder="Repeat your password" />
+                            <span class="input-group-text"><i class="bi bi-globe"></i></span>
+                            <select asp-for="CountryId" id="countryDropdown" class="form-select">
+                                <option value="">-- Select Country --</option>
+                                @foreach (var country in countries)
+                                {
+                                    <option value="@country.Id">@country.Name</option>
+                                }
+                            </select>
                         </div>
-                        <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                        <span asp-validation-for="CountryId" class="text-danger small"></span>
+                    </div>
+
+                    <!-- State Dropdown (Cascades from Country) -->
+                    <div class="mb-3">
+                        <label asp-for="StateId" class="form-label fw-semibold">State / Province</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-map"></i></span>
+                            <select asp-for="StateId" id="stateDropdown" class="form-select" disabled>
+                                <option value="">-- Select State --</option>
+                            </select>
+                        </div>
+                        <span asp-validation-for="StateId" class="text-danger small"></span>
+                    </div>
+
+                    <!-- City Dropdown (Cascades from State) -->
+                    <div class="mb-4">
+                        <label asp-for="CityId" class="form-label fw-semibold">City</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-building"></i></span>
+                            <select asp-for="CityId" id="cityDropdown" class="form-select" disabled>
+                                <option value="">-- Select City --</option>
+                            </select>
+                        </div>
+                        <span asp-validation-for="CityId" class="text-danger small"></span>
                     </div>
 
                     <div class="d-grid mb-3">
@@ -70,4 +115,81 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        $(document).ready(function () {
+            var selectedCountry = '@(Model?.CountryId ?? 0)';
+            var selectedState = '@(Model?.StateId ?? 0)';
+            var selectedCity = '@(Model?.CityId ?? 0)';
+
+            // Function to load states based on countryId
+            function loadStates(countryId, callback) {
+                var $state = $('#stateDropdown');
+                var $city = $('#cityDropdown');
+
+                $state.empty().append('<option value="">-- Select State --</option>').prop('disabled', true);
+                $city.empty().append('<option value="">-- Select City --</option>').prop('disabled', true);
+
+                if (countryId) {
+                    $.getJSON('/Account/GetStates', { countryId: countryId }, function (data) {
+                        $.each(data, function (index, item) {
+                            $state.append($('<option>', {
+                                value: item.id,
+                                text: item.name
+                            }));
+                        });
+                        $state.prop('disabled', false);
+
+                        if (callback) callback();
+                    });
+                }
+            }
+
+            // Function to load cities based on stateId
+            function loadCities(stateId, callback) {
+                var $city = $('#cityDropdown');
+                $city.empty().append('<option value="">-- Select City --</option>').prop('disabled', true);
+
+                if (stateId) {
+                    $.getJSON('/Account/GetCities', { stateId: stateId }, function (data) {
+                        $.each(data, function (index, item) {
+                            $city.append($('<option>', {
+                                value: item.id,
+                                text: item.name
+                            }));
+                        });
+                        $city.prop('disabled', false);
+
+                        if (callback) callback();
+                    });
+                }
+            }
+
+            // Country change event handler
+            $('#countryDropdown').on('change', function () {
+                var countryId = $(this).val();
+                loadStates(countryId);
+            });
+
+            // State change event handler
+            $('#stateDropdown').on('change', function () {
+                var stateId = $(this).val();
+                loadCities(stateId);
+            });
+
+            // Initial load for validation round-trips
+            if (selectedCountry && selectedCountry !== '0') {
+                $('#countryDropdown').val(selectedCountry);
+                loadStates(selectedCountry, function () {
+                    if (selectedState && selectedState !== '0') {
+                        $('#stateDropdown').val(selectedState);
+                        loadCities(selectedState, function () {
+                            if (selectedCity && selectedCity !== '0') {
+                                $('#cityDropdown').val(selectedCity);
+                            }
+                        });
+                    }
+                });
+            }
+        });
+    </script>
 }

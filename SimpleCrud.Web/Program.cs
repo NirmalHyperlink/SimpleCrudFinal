@@ -28,10 +28,12 @@ builder.Services.AddAutoMapper(typeof(MappingProfile).Assembly);
 // 4. Register Repositories (Repository Pattern)
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
+builder.Services.AddScoped<ILocationRepository, LocationRepository>();
 
 // 5. Register Services (Service Layer)
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<ILocationService, LocationService>();
 
 // 6. Configure JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("Jwt");

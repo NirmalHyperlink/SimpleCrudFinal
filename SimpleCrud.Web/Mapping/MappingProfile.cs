@@ -14,5 +14,10 @@ public class MappingProfile : Profile
         // RegisterDto <-> User
         CreateMap<RegisterDto, User>();
         CreateMap<User, RegisterDto>();
+
+        // Location lookups
+        CreateMap<Country, LookupDto>();
+        CreateMap<State, LookupDto>();
+        CreateMap<City, LookupDto>();
     }
 }
